@@ -18,27 +18,22 @@ int wmain()
 	Database *db = new Database();
 	std::string stringRank;
 	utility::string_t rank;
-	utility::string_t s;
-	std::string t;
 	int sumID;
 
 	std::vector<std::string> sumNames;
 	fileMang->GetSumNames(FILE_NAME, sumNames);
 
-	int i = 0;
+	int sumNameIndex = 0;
 	try {
-		while (i < sumNames.size()) {
-			client->BuildUrl(SUM_ID_URL, utility::conversions::to_string_t(sumNames[i]), API_KEY);
+		while (true) {
+			client->BuildUrl(SUM_ID_URL, utility::conversions::to_string_t(sumNames[sumNameIndex]), API_KEY);
 
 			sumID = client->GetSummonerID();
 
 			std::cout << "Updating Summoner: " << client->sumName << std::endl;
 
 			//Convert sumID to utility::string_t data type
-			t = std::to_string(sumID);
-			s = utility::conversions::to_string_t(t);
-
-			client->BuildUrl(SUM_RANK_URL, s, API_KEY);
+			client->BuildUrl(SUM_RANK_URL, utility::conversions::to_string_t(std::to_string(sumID)), API_KEY);
 
 			rank = client->GetSummonerRank();
 
@@ -52,14 +47,14 @@ int wmain()
 			db->Update(client->sumName, stringRank, client->leaguePoints, TABLE_NAME, DATABASE_NAME);
 
 			//db->query("SELECT sumName FROM LEAGUEOFLEGENDS", DATABASE_NAME);
-			i++;
-
-			//Infinite Loop, not good coding practice
-			if (i == sumNames.size())
-				i = 0;
 
 			//Sleep to prevent overuse of api key
 			Sleep(2500);
+
+			sumNameIndex++;
+
+			if (sumNameIndex >= sumNames.size())
+				sumNameIndex = 0;
 		}
 	}
 	catch (const std::exception& e) {

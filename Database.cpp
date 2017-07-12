@@ -8,11 +8,10 @@ Database::Database() {
 	// Constructor
 }
 
-static int callback(void *rowCount, int argc, char **argv, char **azColName) {
+static int callbackTableExists(void *rowCount, int argc, char **argv, char **azColName) {
 
-	int i;
-	for (i = 0; i<argc; i++)
-		printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+	if (argc == 1 && argv)
+		*static_cast<int*>(rowCount) = atoi(argv[0]);
 
 	printf("\n");
 	return 0;
@@ -35,6 +34,9 @@ void Database::CloseDatabase() {
 		fprintf(stderr, "Can't close database: %s\n", sqlite3_errmsg(db));
 }
 
+/**
+ * Simply opens and closes an sqlite database, which in turn instantiates the database for use.
+ */
 void Database::CreateSqlDatabase(std::string dbName) {
 	OpenDatabase(dbName);
 	CloseDatabase();
@@ -63,25 +65,23 @@ void Database::InsertOrReplace(std::string sumName, std::string rank, int league
 	query(str, dbName);
 }
 
+/**
+ * If the specified table does exist, Create it and create and unique index as well.
+ */
 void Database::CreateTable(std::string tableName, std::string dbName) {
 
 	// First check to see if the table exists
-	std::string str1 = "SELECT count(*) FROM '" + tableName + "';";
-
-	char *quer = (char*)str1.c_str();
-
-	//TODO: Get TableExists function to work correctly
-	if (TableExists(quer, dbName))
-		std::cout << "Table Already Exists" << std::endl;
-	else
-	{
-		//std::cout << "Creating table " << tableName << std::endl;
+	if (!TableExists(tableName, dbName)) {
+		std::cout << "Creating table " << tableName << std::endl;
 		std::string str = "CREATE TABLE " + tableName + "(sumName TEXT, rank TEXT NOT NULL, leaguePoints INTEGER NOT NULL)";
 		query(str, dbName);
 		CreateUniqueIndex(tableName, dbName);
 	}
 }
 
+/**
+ * Check if unique index already exists. If no unique index exists, create one.
+ */
 void Database::CreateUniqueIndex(std::string tableName, std::string dbName) {
 
 	std::string str = "CREATE UNIQUE INDEX summoner_index ON " + tableName + "(sumName, rank, leaguePoints)";
@@ -98,10 +98,10 @@ bool Database::query(std::string sql, std::string dbName) {
 	OpenDatabase(dbName);
 
 	/* Execute SQL statement */
-	rc = sqlite3_exec(db, sql1, callback, NULL, &zErrMsg);
+	rc = sqlite3_exec(db, sql1, callbackTableExists, NULL, &zErrMsg);
 
 	if (rc != SQLITE_OK) {
-		//fprintf(stderr, "SQL error: %s\n", zErrMsg);		<--- unsilence query errors here
+		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
 		sqlite3_close(db);
 		return false;
@@ -113,11 +113,17 @@ bool Database::query(std::string sql, std::string dbName) {
 	}
 }
 
-bool Database::TableExists(char *query, std::string dbName) {
+/**
+ * Executes a query, which checks to see if any rows exist in a specified database. If any rows exist, 
+ * function returns true, else false.
+ */
+bool Database::TableExists(std::string tableName, std::string dbName) {
 
-	/*OpenDatabase(dbName);
+	std::string query = "SELECT count(*) FROM '" + tableName + "';";
 
-	rc = sqlite3_exec(db, query, callback, &rowCount, &zErrMsg);
+	OpenDatabase(dbName);
+
+	rc = sqlite3_exec(db, (char*)query.c_str(), callbackTableExists, &rowCount, &zErrMsg);
 
 	if (rc != SQLITE_OK) {
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -125,10 +131,8 @@ bool Database::TableExists(char *query, std::string dbName) {
 	}
 	sqlite3_close(db);
 
-	std::cout << "ROWCOUNT: " + rowCount << std::endl;
-
 	if (rowCount >= 1)
 		return true;
-	else*/
+	else
 		return false;
 }

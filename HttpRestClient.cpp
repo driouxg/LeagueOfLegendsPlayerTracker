@@ -17,9 +17,9 @@ using namespace concurrency::streams;       // Asynchronous streams
 class HttpRestClient {
 
 public:
-	std::string sumName;
 	int leaguePoints;
 	int summonerID;
+	std::string sumName;
 	utility::string_t url;
 
 	inline HttpRestClient();

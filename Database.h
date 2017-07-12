@@ -22,7 +22,7 @@ class Database {
 		inline void InsertOrReplace(std::string sumName, std::string rank, int leaguePoints, std::string tableName, std::string dbName);
 		inline void CreateTable(std::string tableName, std::string dbName);
 		inline void CreateUniqueIndex(std::string tableName, std::string dbName);
-		inline bool TableExists(char *query, std::string dbName);
+		inline bool TableExists(std::string tableName, std::string dbName);
 		inline bool query(std::string str, std::string dbName);
 		inline void Update(std::string sumName, std::string rank, int lp, std::string tableName, std::string dbName);
 };
